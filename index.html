@@ -2,74 +2,338 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>域名测试成功</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>虚空斩击：测试版</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
-            color: #333;
+            overflow: hidden;
+            background-color: #0f0f1a; /* 深邃的夜空蓝 */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none; /* 禁止移动端默认触摸行为 */
         }
-        .container {
-            background-color: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            text-align: center;
-            max-width: 400px;
-            width: 100%;
+        canvas {
+            display: block;
         }
-        h1 {
-            color: #28a745; /* 绿色代表成功 */
-            margin-bottom: 20px;
-            font-size: 24px;
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
         }
-        p {
-            line-height: 1.6;
-            color: #666;
+        h1 { margin: 0; font-size: 24px; letter-spacing: 2px; }
+        p { margin: 5px 0; font-size: 14px; opacity: 0.8; }
+        #score-display { font-size: 32px; font-weight: bold; color: #00ffff; }
+        
+        /* 开始按钮 */
+        #start-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 40px;
+            background: linear-gradient(45deg, #ff00cc, #3333ff);
+            border: none;
+            color: white;
+            font-size: 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 0, 204, 0.5);
+            transition: all 0.3s;
+            pointer-events: auto;
         }
-        .status-badge {
-            display: inline-block;
-            background-color: #e6fffa;
-            color: #2c7a7b;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 14px;
-            margin-bottom: 15px;
-            border: 1px solid #b2f5ea;
+        #start-btn:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 0 40px rgba(255, 0, 204, 0.8);
         }
-        .footer {
-            margin-top: 30px;
-            font-size: 12px;
-            color: #999;
-        }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="status-badge">● 服务运行正常</div>
-        <h1>恭喜！域名解析成功</h1>
-        <p>
-            如果你能看到这个页面，说明你的域名 DNS 解析已经生效，且服务器 Web 服务（如 Nginx/Apache）配置正确。
-        </p>
-        <p>
-            当前时间：<span id="time"></span>
-        </p>
-        
-        <div class="footer">
-            这是一个用于测试的静态页面
-        </div>
+    <div id="ui-layer">
+        <h1>VOID SLASH</h1>
+        <p>WASD 或 方向键移动 | 自动攻击</p>
+        <div id="score-display">SCORE: 0</div>
     </div>
 
-    <script>
-        // 简单的脚本显示当前时间，证明页面是动态加载的
-        document.getElementById('time').innerText = new Date().toLocaleString();
-    </script>
+    <button id="start-btn">开始挑战</button>
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score-display');
+    const startBtn = document.getElementById('start-btn');
+
+    // 自适应屏幕
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // 游戏状态
+    let gameRunning = false;
+    let score = 0;
+    let frame = 0;
+
+    // 玩家对象
+    const player = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        radius: 15,
+        color: '#00ffff',
+        speed: 5,
+        vx: 0,
+        vy: 0,
+        trail: [] // 残影数组
+    };
+
+    // 实体数组
+    let projectiles = [];
+    let enemies = [];
+    let particles = [];
+
+    // 输入控制
+    const keys = {};
+    window.addEventListener('keydown', e => keys[e.key] = true);
+    window.addEventListener('keyup', e => keys[e.key] = false);
+
+    // 工具函数：随机数
+    function random(min, max) { return Math.random() * (max - min) + min; }
+
+    // 类：子弹
+    class Projectile {
+        constructor(x, y, velocity) {
+            this.x = x; this.y = y;
+            this.velocity = velocity;
+            this.radius = 4;
+            this.color = '#fff';
+        }
+        update() {
+            this.x += this.velocity.x;
+            this.y += this.velocity.y;
+        }
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.shadowBlur = 10; // 发光效果
+            ctx.shadowColor = this.color;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+    }
+
+    // 类：敌人
+    class Enemy {
+        constructor(x, y, radius, color, velocity) {
+            this.x = x; this.y = y;
+            this.radius = radius;
+            this.color = color;
+            this.velocity = velocity;
+        }
+        update() {
+            // 简单的追踪逻辑
+            const angle = Math.atan2(player.y - this.y, player.x - this.x);
+            this.velocity.x = Math.cos(angle) * 1.5; // 敌人速度
+            this.velocity.y = Math.sin(angle) * 1.5;
+            this.x += this.velocity.x;
+            this.y += this.velocity.y;
+        }
+        draw() {
+            ctx.beginPath();
+            // 绘制菱形敌人
+            ctx.moveTo(this.x, this.y - this.radius);
+            ctx.lineTo(this.x + this.radius, this.y);
+            ctx.lineTo(this.x, this.y + this.radius);
+            ctx.lineTo(this.x - this.radius, this.y);
+            ctx.fillStyle = this.color;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = this.color;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+    }
+
+    // 类：粒子特效 (击杀爆炸)
+    class Particle {
+        constructor(x, y, radius, color, velocity) {
+            this.x = x; this.y = y;
+            this.radius = radius;
+            this.color = color;
+            this.velocity = velocity;
+            this.alpha = 1;
+            this.friction = 0.98;
+        }
+        update() {
+            this.velocity.x *= this.friction;
+            this.velocity.y *= this.friction;
+            this.x += this.velocity.x;
+            this.y += this.velocity.y;
+            this.alpha -= 0.02;
+        }
+        draw() {
+            ctx.save();
+            ctx.globalAlpha = this.alpha;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    // 生成敌人
+    function spawnEnemies() {
+        if (frame % 60 === 0) { // 每秒生成
+            const radius = random(15, 25);
+            let x, y;
+            if (Math.random() < 0.5) {
+                x = Math.random() < 0.5 ? 0 - radius : canvas.width + radius;
+                y = Math.random() * canvas.height;
+            } else {
+                x = Math.random() * canvas.width;
+                y = Math.random() < 0.5 ? 0 - radius : canvas.height + radius;
+            }
+            const color = `hsl(${random(0, 360)}, 50%, 50%)`;
+            enemies.push(new Enemy(x, y, radius, color, {x:0, y:0}));
+        }
+    }
+
+    // 自动射击
+    function autoShoot() {
+        if (frame % 20 === 0 && enemies.length > 0) {
+            // 寻找最近的敌人
+            let nearest = null;
+            let minDist = Infinity;
+            enemies.forEach(enemy => {
+                const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+                if (dist < minDist) { minDist = dist; nearest = enemy; }
+            });
+
+            if (nearest) {
+                const angle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+                const velocity = { x: Math.cos(angle) * 8, y: Math.sin(angle) * 8 };
+                projectiles.push(new Projectile(player.x, player.y, velocity));
+            }
+        }
+    }
+
+    // 主循环
+    function animate() {
+        if (!gameRunning) return;
+        requestAnimationFrame(animate);
+        frame++;
+
+        // 背景拖尾效果 (制造速度感)
+        ctx.fillStyle = 'rgba(15, 15, 26, 0.3)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 玩家移动逻辑
+        if (keys['w'] || keys['ArrowUp']) player.y -= player.speed;
+        if (keys['s'] || keys['ArrowDown']) player.y += player.speed;
+        if (keys['a'] || keys['ArrowLeft']) player.x -= player.speed;
+        if (keys['d'] || keys['ArrowRight']) player.x += player.speed;
+
+        // 边界限制
+        player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
+        player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
+
+        // 绘制玩家残影 (二次元速度线感)
+        player.trail.push({x: player.x, y: player.y, alpha: 0.6});
+        if (player.trail.length > 5) player.trail.shift();
+        player.trail.forEach(t => {
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, player.radius * 0.8, 0, Math.PI*2);
+            ctx.fillStyle = `rgba(0, 255, 255, ${t.alpha})`;
+            ctx.fill();
+            t.alpha -= 0.1;
+        });
+
+        // 绘制玩家本体
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+        ctx.fillStyle = player.color;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = player.color;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        autoShoot();
+        spawnEnemies();
+
+        // 更新粒子
+        particles.forEach((particle, index) => {
+            if (particle.alpha <= 0) particles.splice(index, 1);
+            else { particle.update(); particle.draw(); }
+        });
+
+        // 更新子弹
+        projectiles.forEach((projectile, index) => {
+            projectile.update();
+            projectile.draw();
+            // 移除屏幕外子弹
+            if (projectile.x < 0 || projectile.x > canvas.width || 
+                projectile.y < 0 || projectile.y > canvas.height) {
+                projectiles.splice(index, 1);
+            }
+        });
+
+        // 更新敌人 & 碰撞检测
+        enemies.forEach((enemy, index) => {
+            enemy.update();
+            enemy.draw();
+
+            // 子弹击中敌人
+            projectiles.forEach((projectile, pIndex) => {
+                const dist = Math.hypot(projectile.x - enemy.x, projectile.y - enemy.y);
+                if (dist - enemy.radius - projectile.radius < 1) {
+                    // 爆炸特效
+                    for (let i = 0; i < 8; i++) {
+                        particles.push(new Particle(
+                            projectile.x, projectile.y, 
+                            random(2, 4), enemy.color, 
+                            {x: (Math.random()-0.5)*5, y: (Math.random()-0.5)*5}
+                        ));
+                    }
+                    score += 100;
+                    scoreEl.innerText = 'SCORE: ' + score;
+                    setTimeout(() => {
+                        enemies.splice(index, 1);
+                        projectiles.splice(pIndex, 1);
+                    }, 0);
+                }
+            });
+
+            // 敌人碰到玩家 (游戏结束)
+            const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+            if (dist - enemy.radius - player.radius < 1) {
+                gameRunning = false;
+                startBtn.innerText = "游戏结束 - 重试";
+                startBtn.classList.remove('hidden');
+            }
+        });
+    }
+
+    // 开始游戏
+    startBtn.addEventListener('click', () => {
+        startBtn.classList.add('hidden');
+        gameRunning = true;
+        score = 0;
+        scoreEl.innerText = 'SCORE: 0';
+        enemies = [];
+        projectiles = [];
+        particles = [];
+        player.x = canvas.width/2;
+        player.y = canvas.height/2;
+        animate();
+    });
+
+</script>
 </body>
 </html>
