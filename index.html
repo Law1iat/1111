@@ -3,615 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>围住神经猫</title>
+    <title>围住那只猫 - 简约版</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Microsoft YaHei', Arial, sans-serif;
-            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
-            min-height: 100vh;
+            background-color: #eeeeee;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
-            touch-action: none;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            touch-action: manipulation;
         }
-
-        /* 标题区域 */
-        .header {
+        #game-container {
+            position: relative;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        canvas {
+            cursor: pointer;
+            max-width: 100%;
+        }
+        .ui {
             text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .title {
-            font-size: 2rem;
-            color: #333;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
             margin-bottom: 10px;
         }
-
-        .subtitle {
-            font-size: 1rem;
-            color: #666;
-        }
-
-        /* 游戏容器 */
-        .game-container {
-            position: relative;
-            background: #f5deb3;
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            border: 4px solid #8b4513;
-        }
-
-        /* 画布 */
-        #gameCanvas {
-            display: block;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        /* 信息栏 */
-        .info-bar {
-            display: flex;
-            justify-content: space-between;
+        h1 { margin: 10px 0; color: #333; }
+        .score { font-size: 1.2rem; color: #ff5722; font-weight: bold; }
+        .btn-reset {
             margin-top: 15px;
-            padding: 10px 20px;
-            background: rgba(255,255,255,0.8);
-            border-radius: 8px;
-        }
-
-        .info-item {
-            text-align: center;
-        }
-
-        .info-label {
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        .info-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #333;
-        }
-
-        /* 按钮 */
-        .btn {
-            margin-top: 20px;
-            padding: 12px 40px;
-            font-size: 1.1rem;
-            background: linear-gradient(180deg, #ff6b6b 0%, #ee5a5a 100%);
+            padding: 10px 25px;
+            background: #4caf50;
             color: white;
             border: none;
-            border-radius: 25px;
+            border-radius: 5px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(255,107,107,0.4);
-            font-family: inherit;
-        }
-
-        .btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(255,107,107,0.6);
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        /* 弹窗 */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .modal.show {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal-content {
-            background: linear-gradient(180deg, #fff 0%, #f0f0f0 100%);
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-            transform: scale(0.8);
-            transition: transform 0.3s ease;
-            max-width: 90%;
-        }
-
-        .modal.show .modal-content {
-            transform: scale(1);
-        }
-
-        .modal-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-        }
-
-        .modal-title {
-            font-size: 1.8rem;
-            color: #333;
-            margin-bottom: 15px;
-        }
-
-        .modal-text {
-            font-size: 1.1rem;
-            color: #666;
-            margin-bottom: 25px;
-        }
-
-        /* 猫的表情 */
-        .cat-mood {
-            position: absolute;
-            top: -50px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: white;
-            padding: 8px 20px;
-            border-radius: 20px;
             font-size: 1rem;
-            color: #333;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            opacity: 0;
-            transition: opacity 0.3s;
         }
-
-        .cat-mood.show {
-            opacity: 1;
-        }
-
-        /* 响应式 */
-        @media (max-width: 500px) {
-            .title { font-size: 1.5rem; }
-            .game-container { padding: 10px; }
-            .info-value { font-size: 1.2rem; }
-        }
+        .btn-reset:hover { background: #45a049; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1 class="title">🐱 围住神经猫 🐱</h1>
-        <p class="subtitle">点击格子放置障碍，别让猫跑掉！</p>
+
+    <div class="ui">
+        <h1>围住那只猫</h1>
+        <div class="score">步数: <span id="stepCount">0</span></div>
     </div>
 
-    <div class="game-container">
-        <div class="cat-mood" id="catMood">哼！我逃得掉！</div>
-        <canvas id="gameCanvas"></canvas>
-        <div class="info-bar">
-            <div class="info-item">
-                <div class="info-label">步数</div>
-                <div class="info-value" id="moves">0</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">最佳记录</div>
-                <div class="info-value" id="bestScore">-</div>
-            </div>
-        </div>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
     </div>
 
-    <button class="btn" onclick="initGame()">🔄 重新开始</button>
+    <button class="btn-reset" onclick="resetGame()">重新开始</button>
 
-    <!-- 胜利弹窗 -->
-    <div class="modal" id="winModal">
-        <div class="modal-content">
-            <div class="modal-icon">🎉</div>
-            <h2 class="modal-title">恭喜！你困住猫了！</h2>
-            <p class="modal-text">用了 <span id="winMoves">0</span> 步</p>
-            <button class="btn" onclick="closeModal('win')">再玩一次</button>
-        </div>
-    </div>
+<script>
+/**
+ * 游戏配置与常量
+ */
+const ROWS = 9;
+const COLS = 9;
+const CIRCLE_RADIUS = 18;
+const GAP = 5;
+const OFFSET_X = 25;
+const OFFSET_Y = 25;
 
-    <!-- 失败弹窗 -->
-    <div class="modal" id="loseModal">
-        <div class="modal-content">
-            <div class="modal-icon">😿</div>
-            <h2 class="modal-title">猫逃跑了！</h2>
-            <p class="modal-text">它成功逃脱了边界</p>
-            <button class="btn" onclick="closeModal('lose')">再试一次</button>
-        </div>
-    </div>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const stepLabel = document.getElementById('stepCount');
 
-    <script>
-        // ==================== 游戏配置 ====================
-        const GRID_SIZE = 11;  // 11x11 网格
-        const CELL_SIZE = 45;  // 格子大小
-        const CAT_COLOR = '#FFA500';  // 猫的颜色
-        const WALL_COLOR = '#8B4513';  // 障碍颜色
-        const EMPTY_COLOR = '#DEB887';  // 空格颜色
-        const HOVER_COLOR = '#D2B48C';  // 悬停颜色
+let grid = []; // 0: 空地, 1: 障碍物
+let catPos = { x: 4, y: 4 };
+let steps = 0;
+let gameOver = false;
 
-        // ==================== 游戏状态 ====================
-        let canvas, ctx;
-        let grid = [];  // 0=空，1=墙，2=猫
-        let catPos = { x: 5, y: 5 };
-        let moves = 0;
-        let bestScore = localStorage.getItem('catBestScore') || '-';
-        let gameRunning = false;
-        let catMoodTimer = null;
+/**
+ * 初始化游戏状态
+ */
+function resetGame() {
+    grid = [];
+    steps = 0;
+    gameOver = false;
+    catPos = { x: 4, y: 4 };
+    stepLabel.innerText = steps;
 
-        // ==================== 初始化 ====================
-        window.onload = function() {
-            canvas = document.getElementById('gameCanvas');
-            ctx = canvas.getContext('2d');
+    // 生成地图
+    for (let i = 0; i < ROWS; i++) {
+        grid[i] = [];
+        for (let j = 0; j < COLS; j++) {
+            // 初始随机生成几个障碍，避开中心点
+            let isObstacle = Math.random() < 0.15 && !(i === 4 && j === 4);
+            grid[i][j] = isObstacle ? 1 : 0;
+        }
+    }
+    draw();
+}
+
+/**
+ * 绘制函数
+ */
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            // 奇数行偏移（六边形蜂窝布局核心）
+            const x = OFFSET_X + c * (CIRCLE_RADIUS * 2 + GAP) + (r % 2 === 1 ? CIRCLE_RADIUS : 0);
+            const y = OFFSET_Y + r * (CIRCLE_RADIUS * 2);
+
+            // 绘制圆圈
+            ctx.beginPath();
+            ctx.arc(x, y, CIRCLE_RADIUS, 0, Math.PI * 2);
             
-            // 设置画布大小
-            canvas.width = GRID_SIZE * CELL_SIZE;
-            canvas.height = GRID_SIZE * CELL_SIZE;
-            
-            // 显示最佳记录
-            document.getElementById('bestScore').textContent = bestScore;
-            
-            // 绑定点击事件
-            canvas.addEventListener('click', handleCanvasClick);
-            canvas.addEventListener('mousemove', handleCanvasMove);
-            canvas.addEventListener('mouseleave', () => draw());
-            
-            // 初始化游戏
-            initGame();
-        };
+            if (grid[r][c] === 1) {
+                ctx.fillStyle = '#ffaa44'; // 障碍物颜色
+            } else {
+                ctx.fillStyle = '#bacda3'; // 普通地块颜色
+            }
+            ctx.fill();
+            ctx.closePath();
 
-        // ==================== 游戏逻辑 ====================
-        function initGame() {
-            // 重置网格
-            grid = [];
-            for (let y = 0; y < GRID_SIZE; y++) {
-                grid[y] = [];
-                for (let x = 0; x < GRID_SIZE; x++) {
-                    grid[y][x] = 0;
+            // 如果是猫的位置
+            if (r === catPos.y && c === catPos.x) {
+                drawCat(x, y);
+            }
+        }
+    }
+}
+
+/**
+ * 画一只简单的“神经猫”
+ */
+function drawCat(x, y) {
+    ctx.fillStyle = '#333';
+    // 身体
+    ctx.beginPath();
+    ctx.arc(x, y, CIRCLE_RADIUS * 0.8, 0, Math.PI * 2);
+    ctx.fill();
+    // 耳朵
+    ctx.beginPath();
+    ctx.moveTo(x - 10, y - 5); ctx.lineTo(x - 12, y - 18); ctx.lineTo(x - 2, y - 10);
+    ctx.moveTo(x + 10, y - 5); ctx.lineTo(x + 12, y - 18); ctx.lineTo(x + 2, y - 10);
+    ctx.fill();
+    // 眼睛
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(x - 5, y - 2, 3, 0, Math.PI * 2);
+    ctx.arc(x + 5, y - 2, 3, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+/**
+ * 获取点击位置对应的坐标
+ */
+canvas.addEventListener('click', (e) => {
+    if (gameOver) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const x = OFFSET_X + c * (CIRCLE_RADIUS * 2 + GAP) + (r % 2 === 1 ? CIRCLE_RADIUS : 0);
+            const y = OFFSET_Y + r * (CIRCLE_RADIUS * 2);
+            
+            const dist = Math.sqrt((mouseX - x)**2 + (mouseY - y)**2);
+            if (dist < CIRCLE_RADIUS) {
+                if (grid[r][c] === 0 && !(r === catPos.y && c === catPos.x)) {
+                    grid[r][c] = 1;
+                    steps++;
+                    stepLabel.innerText = steps;
+                    moveCat();
+                    draw();
                 }
-            }
-            
-            // 随机放置一些初始障碍（边缘）
-            for (let i = 0; i < 8; i++) {
-                let x, y;
-                do {
-                    x = Math.floor(Math.random() * GRID_SIZE);
-                    y = Math.floor(Math.random() * GRID_SIZE);
-                } while (
-                    (x === 5 && y === 5) ||  // 不能是猫的位置
-                    grid[y][x] === 1 ||  // 不能重复
-                    (x > 2 && x < 8 && y > 2 && y < 8)  // 中心区域不放
-                );
-                grid[y][x] = 1;
-            }
-            
-            // 重置猫位置
-            catPos = { x: 5, y: 5 };
-            grid[5][5] = 2;
-            
-            // 重置状态
-            moves = 0;
-            gameRunning = true;
-            document.getElementById('moves').textContent = '0';
-            
-            // 隐藏弹窗
-            document.getElementById('winModal').classList.remove('show');
-            document.getElementById('loseModal').classList.remove('show');
-            
-            // 绘制
-            draw();
-        }
-
-        // ==================== 绘制 ====================
-        function draw(hoverX = -1, hoverY = -1) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            for (let y = 0; y < GRID_SIZE; y++) {
-                for (let x = 0; x < GRID_SIZE; x++) {
-                    const cellX = x * CELL_SIZE;
-                    const cellY = y * CELL_SIZE;
-                    
-                    // 绘制格子背景
-                    if (grid[y][x] === 1) {
-                        // 障碍
-                        drawCell(cellX, cellY, WALL_COLOR, true);
-                    } else if (grid[y][x] === 2) {
-                        // 猫
-                        drawCat(cellX, cellY);
-                    } else {
-                        // 空格
-                        if (x === hoverX && y === hoverY && gameRunning) {
-                            drawCell(cellX, cellY, HOVER_COLOR, false);
-                        } else {
-                            drawCell(cellX, cellY, EMPTY_COLOR, false);
-                        }
-                    }
-                }
-            }
-        }
-
-        function drawCell(x, y, color, isWall) {
-            const padding = 2;
-            ctx.fillStyle = color;
-            ctx.fillRect(x + padding, y + padding, CELL_SIZE - padding * 2, CELL_SIZE - padding * 2);
-            
-            // 边框
-            ctx.strokeStyle = '#8B4513';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(x + padding, y + padding, CELL_SIZE - padding * 2, CELL_SIZE - padding * 2);
-            
-            // 如果是墙，画个 X
-            if (isWall) {
-                ctx.strokeStyle = '#654321';
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.moveTo(x + 10, y + 10);
-                ctx.lineTo(x + CELL_SIZE - 10, y + CELL_SIZE - 10);
-                ctx.moveTo(x + CELL_SIZE - 10, y + 10);
-                ctx.lineTo(x + 10, y + CELL_SIZE - 10);
-                ctx.stroke();
-            }
-        }
-
-        function drawCat(x, y) {
-            const centerX = x + CELL_SIZE / 2;
-            const centerY = y + CELL_SIZE / 2;
-            const radius = CELL_SIZE / 2 - 5;
-            
-            // 猫身体（圆形）
-            ctx.fillStyle = CAT_COLOR;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#CC8400';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            
-            // 猫耳朵
-            ctx.fillStyle = CAT_COLOR;
-            ctx.beginPath();
-            ctx.moveTo(centerX - radius + 5, centerY - radius + 5);
-            ctx.lineTo(centerX - radius + 15, centerY - radius - 10);
-            ctx.lineTo(centerX - radius + 25, centerY - radius + 5);
-            ctx.fill();
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.moveTo(centerX + radius - 5, centerY - radius + 5);
-            ctx.lineTo(centerX + radius - 15, centerY - radius - 10);
-            ctx.lineTo(centerX + radius - 25, centerY - radius + 5);
-            ctx.fill();
-            ctx.stroke();
-            
-            // 猫眼睛
-            ctx.fillStyle = 'white';
-            ctx.beginPath();
-            ctx.arc(centerX - 8, centerY - 5, 6, 0, Math.PI * 2);
-            ctx.arc(centerX + 8, centerY - 5, 6, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.fillStyle = 'black';
-            ctx.beginPath();
-            ctx.arc(centerX - 8, centerY - 5, 3, 0, Math.PI * 2);
-            ctx.arc(centerX + 8, centerY - 5, 3, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // 猫鼻子
-            ctx.fillStyle = 'pink';
-            ctx.beginPath();
-            ctx.arc(centerX, centerY + 5, 3, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // 猫胡须
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(centerX - 15, centerY + 5);
-            ctx.lineTo(centerX - 25, centerY + 2);
-            ctx.moveTo(centerX - 15, centerY + 8);
-            ctx.lineTo(centerX - 25, centerY + 8);
-            ctx.moveTo(centerX + 15, centerY + 5);
-            ctx.lineTo(centerX + 25, centerY + 2);
-            ctx.moveTo(centerX + 15, centerY + 8);
-            ctx.lineTo(centerX + 25, centerY + 8);
-            ctx.stroke();
-            
-            // 猫嘴巴（动态变化）
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY + 10, 5, 0.2 * Math.PI, 0.8 * Math.PI);
-            ctx.stroke();
-        }
-
-        // ==================== 交互 ====================
-        function handleCanvasClick(e) {
-            if (!gameRunning) return;
-            
-            const rect = canvas.getBoundingClientRect();
-            const x = Math.floor((e.clientX - rect.left) / CELL_SIZE);
-            const y = Math.floor((e.clientY - rect.top) / CELL_SIZE);
-            
-            // 检查点击有效性
-            if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return;
-            if (grid[y][x] !== 0) return;  // 只能点空格
-            
-            // 放置障碍
-            grid[y][x] = 1;
-            moves++;
-            document.getElementById('moves').textContent = moves;
-            
-            // 检查猫是否被围住
-            if (isCatTrapped()) {
-                gameWin();
                 return;
             }
-            
-            // 猫移动
-            moveCat();
-            
-            // 重新绘制
+        }
+    }
+});
+
+/**
+ * 猫的移动逻辑 (核心：BFS 寻路)
+ */
+function moveCat() {
+    // 1. 检查是否已经被围死
+    const path = findShortestPath(catPos.x, catPos.y);
+
+    if (path) {
+        // 如果有路，走最短路径的第一步
+        catPos.x = path[1].x;
+        catPos.y = path[1].y;
+
+        // 检查猫是否逃脱（到达边界）
+        if (catPos.x === 0 || catPos.x === COLS-1 || catPos.y === 0 || catPos.y === ROWS-1) {
             draw();
+            setTimeout(() => alert("猫逃跑了！你输了。"), 50);
+            gameOver = true;
+        }
+    } else {
+        // 没有逃生路径，尝试随机移动到空位
+        const neighbors = getNeighbors(catPos.x, catPos.y).filter(n => grid[n.y][n.x] === 0);
+        if (neighbors.length > 0) {
+            const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+            catPos.x = next.x;
+            catPos.y = next.y;
+        } else {
+            draw();
+            setTimeout(() => alert(`你成功围住了神经猫！共用了 ${steps} 步。`), 50);
+            gameOver = true;
+        }
+    }
+}
+
+/**
+ * 获取相邻坐标 (考虑六边形偏移)
+ */
+function getNeighbors(x, y) {
+    const res = [];
+    const dirs = y % 2 === 0 ? 
+        [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1]] : // 偶数行
+        [[-1, 0], [1, 0], [0, -1], [0, 1], [1, -1], [1, 1]];   // 奇数行
+
+    for (let [dx, dy] of dirs) {
+        const nx = x + dx, ny = y + dy;
+        if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
+            res.push({ x: nx, y: ny });
+        }
+    }
+    return res;
+}
+
+/**
+ * 广度优先搜索寻找通往边界的最短路径
+ */
+function findShortestPath(startX, startY) {
+    let queue = [[{ x: startX, y: startY }]];
+    let visited = new Set();
+    visited.add(`${startX},${startY}`);
+
+    while (queue.length > 0) {
+        let path = queue.shift();
+        let curr = path[path.length - 1];
+
+        // 如果到达边缘，返回路径
+        if (curr.x === 0 || curr.x === COLS - 1 || curr.y === 0 || curr.y === ROWS - 1) {
+            return path;
         }
 
-        function handleCanvasMove(e) {
-            if (!gameRunning) return;
-            
-            const rect = canvas.getBoundingClientRect();
-            const x = Math.floor((e.clientX - rect.left) / CELL_SIZE);
-            const y = Math.floor((e.clientY - rect.top) / CELL_SIZE);
-            
-            draw(x, y);
-        }
-
-        // ==================== 猫 AI ====================
-        function moveCat() {
-            // 使用 BFS 寻找最短路径到边界
-            const path = findPathToEdge(catPos.x, catPos.y);
-            
-            if (path && path.length > 0) {
-                // 有路径可逃，移动到下一步
-                const nextPos = path[0];
-                grid[catPos.y][catPos.x] = 0;  // 清空原位置
-                catPos = nextPos;
-                grid[catPos.y][catPos.x] = 2;  // 设置新位置
-                
-                // 检查是否逃脱
-                if (isOnEdge(catPos.x, catPos.y)) {
-                    gameLose();
-                }
-                
-                // 显示猫的心情
-                showCatMood(getRandomMood());
+        let neighbors = getNeighbors(curr.x, curr.y);
+        for (let next of neighbors) {
+            if (grid[next.y][next.x] === 0 && !visited.has(`${next.x},${next.y}`)) {
+                visited.add(`${next.x},${next.y}`);
+                queue.push([...path, next]);
             }
-            // 如果没有路径，猫被困住，不移动
         }
+    }
+    return null; // 无路可逃
+}
 
-        function findPathToEdge(startX, startY) {
-            const queue = [{ x: startX, y: startY, path: [] }];
-            const visited = new Set();
-            visited.add(`${startX},${startY}`);
-            
-            const directions = [
-                { dx: 0, dy: -1 },  // 上
-                { dx: 0, dy: 1 },   // 下
-                { dx: -1, dy: 0 },  // 左
-                { dx: 1, dy: 0 },   // 右
-                { dx: -1, dy: -1 }, // 左上
-                { dx: 1, dy: -1 },  // 右上
-                { dx: -1, dy: 1 },  // 左下
-                { dx: 1, dy: 1 }    // 右下
-            ];
-            
-            while (queue.length > 0) {
-                const current = queue.shift();
-                
-                // 检查是否到达边界
-                if (isOnEdge(current.x, current.y) && (current.x !== startX || current.y !== startY)) {
-                    return current.path;
-                }
-                
-                // 探索相邻格子
-                for (const dir of directions) {
-                    const nx = current.x + dir.dx;
-                    const ny = current.y + dir.dy;
-                    
-                    if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE) {
-                        if (grid[ny][nx] === 0 && !visited.has(`${nx},${ny}`)) {
-                            visited.add(`${nx},${ny}`);
-                            queue.push({
-                                x: nx,
-                                y: ny,
-                                path: [...current.path, { x: nx, y: ny }]
-                            });
-                        }
-                    }
-                }
-            }
-            
-            return null;  // 没有路径
-        }
-
-        function isOnEdge(x, y) {
-            return x === 0 || x === GRID_SIZE - 1 || y === 0 || y === GRID_SIZE - 1;
-        }
-
-        function isCatTrapped() {
-            const path = findPathToEdge(catPos.x, catPos.y);
-            return path === null;
-        }
-
-        // ==================== 游戏结束 ====================
-        function gameWin() {
-            gameRunning = false;
-            
-            // 更新最佳记录
-            if (bestScore === '-' || moves < parseInt(bestScore)) {
-                bestScore = moves;
-                localStorage.setItem('catBestScore', bestScore);
-                document.getElementById('bestScore').textContent = bestScore;
-            }
-            
-            document.getElementById('winMoves').textContent = moves;
-            document.getElementById('winModal').classList.add('show');
-        }
-
-        function gameLose() {
-            gameRunning = false;
-            document.getElementById('loseModal').classList.add('show');
-        }
-
-        function closeModal(type) {
-            document.getElementById(type + 'Modal').classList.remove('show');
-            initGame();
-        }
-
-        // ==================== 猫的心情 ====================
-        function showCatMood(text) {
-            const moodEl = document.getElementById('catMood');
-            moodEl.textContent = text;
-            moodEl.classList.add('show');
-            
-            clearTimeout(catMoodTimer);
-            catMoodTimer = setTimeout(() => {
-                moodEl.classList.remove('show');
-            }, 1500);
-        }
-
-        function getRandomMood() {
-            const moods = [
-                '哼！我逃得掉！',
-                '太天真了！',
-                '就这？',
-                '抓不到我~',
-                '嘿嘿嘿！',
-                '再来一次！',
-                '我闪！',
-                '你不行啊！'
-            ];
-            return moods[Math.floor(Math.random() * moods.length)];
-        }
-
-        // ==================== 本地存储 ====================
-        // 页面加载时读取最佳记录
-        window.addEventListener('load', () => {
-            const saved = localStorage.getItem('catBestScore');
-            if (saved) {
-                bestScore = saved;
-                document.getElementById('bestScore').textContent = bestScore;
-            }
-        });
-    </script>
+// 启动游戏
+resetGame();
+</script>
 </body>
 </html>
