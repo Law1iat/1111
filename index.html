@@ -3,7 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>围住那只猫（有彩蛋）</title>
+    <title>围住那只猫 - 有彩蛋</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* 改为顶部对齐防止溢出 */
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 20px;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            overflow: hidden;
+        }
+        .ui { text-align: center; margin-bottom: 10px; width: 100%; }
+        h1 { margin: 5px 0; color: #333; font-size: 1.5rem; }
+        .score { font-size: 1.1rem; color: #ff5722; font-weight: bold; }
+        
+        #game-wrapper {
+            position: relative;
+            width: 95vw;
+            max-width: 450px;
+            /* 移除多余的高度比例，靠内部canvas自适应 */
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        canvas {
+            width: 100%;
+            display: block; /* 消除内联元素底边距 */
+            touch-action: none;
+        }
+        .btn-reset {
+            padding: 12px 35px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+            cursor: pointer;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ui">
+        <h1>围住那只猫</h1>
+        <div class="score">步数: <span id="stepCount">0</span></div>
+    </div>
+
+    <div id="game-wrapper">
+        <canvas id="gameCanvas" width="850" height="800"></canvas>
+    </div>
+
+    <button class="btn-reset" onclick="resetGame()">重新开始</button>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const stepLabel = document.getElementById('stepCount');
+
+const ROWS = 9;
+const COLS = 9;
+const CELL_SIZE = 40; 
+const GAP = 8;
+const PADDING_X = 55; 
+const PADDING_Y = 50;
+
+let grid = [];
+let catPos = { x: 4, y: 4 };
+let steps = 0;
+let gameOver = false;
+let winAnimFrame = 0;
+let isVictory = false;
+
+function resetGame() {
+    grid = [];
+    steps = 0;
+    gameOver = false;
+    isVictory = false;
+    winAnimFrame = 0;
+    catPos = { x: 4, y: 4 };
+    stepLabel.innerText = steps;
+
+    for (let i = 0; i < ROWS; i++) {
+        grid[i] = [];
+        for (let j = 0; j < COLS; j++) {
+            let isObstacle = Math.random() < 0.12 && !(i === 4 && j === 4);
+            grid[i][j] = isObstacle ? 1 : 0;
+        }
+    }
+    render();
+}
+
+function handleInput(e) {
+    if (gameOver) return;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const canvasX = (clientX - rect.left) * scaleX;
+    const canvasY = (clientY - rect.top) * scaleY;
+
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const { x, y } = getCoord(c, r);
+            const dist = Math.sqrt((canvasX - x)**2 + (canvasY - y)**2);
+            if (dist < CELL_SIZE) {
+                if (grid[r][c] === 0 && !(r === catPos.y && c === catPos.x)) {
+                    grid[r][c] = 1;
+                    steps++;
+                    stepLabel.innerText = steps;
+                    moveCat();
+                    render();
+                }
+                return;
+            }
+        }
+    }
+}
+
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(e); }, {passive: false});
+canvas.addEventListener('mousedown', handleInput);
+
+function getCoord(c, r) {
+    const x = PADDING_X + c * (CELL_SIZE * 2 + GAP) + (r % 2 === 1 ? CELL_SIZE : 0);
+    const y = PADDING_Y + r * (CELL_SIZE * 1.8);
+    return { x, y };
+}
+
+function drawCat(x, y, alpha, isClown) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    if (!isClown) {
+        ctx.fillStyle = '#333';
+        ctx.beginPath(); ctx.arc(x, y, CELL_SIZE * 0.7, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x-15, y-5); ctx.lineTo(x-18, y-30); ctx.lineTo(x-2, y-10);
+        ctx.moveTo(x+15, y-5); ctx.lineTo(x+18, y-30); ctx.lineTo(x+2, y-10);
+        ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.beginPath(); ctx.arc(x-8, y-5, 5, 0, Math.PI * 2); ctx.arc(x+8, y-5, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'black';
+        ctx.beginPath(); ctx.arc(x-8, y-5, 2, 0, Math.PI * 2); ctx.arc(x+8, y-5, 2, 0, Math.PI * 2); ctx.fill();
+    } else {
+        // 精细小丑绘制
+        ctx.fillStyle = '#f44336'; // 红头发
+        const hairs = [[-22,-12,16],[22,-12,16],[-26,5,13],[26,5,13]];
+        hairs.forEach(h => { ctx.beginPath(); ctx.arc(x+h[0], y+h[1], h[2], 0, Math.PI*2); ctx.fill(); });
+        
+        ctx.fillStyle = '#fff'; // 脸
+        ctx.beginPath(); ctx.arc(x, y, CELL_SIZE * 0.75, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#333'; ctx.lineWidth = 2; ctx.stroke();
+        
+        ctx.fillStyle = '#9c27b0'; // 紫眼圈
+        ctx.beginPath(); ctx.arc(x-12, y-8, 8, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x+12, y-8, 8, 0, Math.PI*2); ctx.fill();
+
+        ctx.fillStyle = 'black'; // 瞳孔
+        ctx.beginPath(); ctx.arc(x-12, y-8, 3, 0, Math.PI * 2); ctx.arc(x+12, y-8, 3, 0, Math.PI * 2); ctx.fill();
+        
+        ctx.fillStyle = '#ff1744'; // 大红鼻
+        ctx.beginPath(); ctx.arc(x, y + 6, 11, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.6)'; // 高光
+        ctx.beginPath(); ctx.arc(x-4, y+3, 4, 0, Math.PI*2); ctx.fill();
+
+        ctx.strokeStyle = '#f44336'; ctx.lineWidth = 3; // 笑嘴
+        ctx.beginPath(); ctx.arc(x, y+10, 18, 0.1*Math.PI, 0.9*Math.PI); ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const { x, y } = getCoord(c, r);
+            ctx.beginPath();
+            ctx.arc(x, y, CELL_SIZE, 0, Math.PI * 2);
+            ctx.fillStyle = grid[r][c] === 1 ? '#ffaa44' : '#bacda3';
+            ctx.fill();
+        }
+    }
+    const { x, y } = getCoord(catPos.x, catPos.y);
+    if (isVictory) {
+        winAnimFrame = Math.min(1, winAnimFrame + 0.015);
+        drawCat(x, y, 1 - winAnimFrame, false);
+        drawCat(x, y, winAnimFrame, true);
+        drawVictoryText(catPos.x, catPos.y);
+        if (winAnimFrame < 1) requestAnimationFrame(render);
+    } else {
+        drawCat(x, y, 1, false);
+    }
+}
+
+function drawVictoryText(cx, cy) {
+    const neighbors = getNeighbors(cx, cy);
+    const texts = ["开", "开", "学", "学", "喽", "喽"];
+    neighbors.sort((a, b) => a.y - b.y || a.x - b.x);
+    ctx.save();
+    const fontSize = Math.floor(CELL_SIZE * 1.4 * winAnimFrame);
+    ctx.font = `bold ${fontSize}px "Microsoft YaHei"`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = `rgba(255, 255, 255, ${winAnimFrame})`;
+    neighbors.forEach((n, i) => {
+        if (texts[i]) {
+            const { x, y } = getCoord(n.x, n.y);
+            ctx.fillText(texts[i], x, y);
+        }
+    });
+    ctx.restore();
+}
+
+function moveCat() {
+    const path = findShortestPath(catPos.x, catPos.y);
+    if (path) {
+        catPos.x = path[1].x;
+        catPos.y = path[1].y;
+        if (catPos.x === 0 || catPos.x === COLS-1 || catPos.y === 0 || catPos.y === ROWS-1) {
+            gameOver = true;
+            setTimeout(() => { if(!isVictory) alert("猫跑了！"); }, 100);
+        }
+    } else {
+        const neighbors = getNeighbors(catPos.x, catPos.y).filter(n => grid[n.y][n.x] === 0);
+        if (neighbors.length > 0) {
+            const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+            catPos.x = next.x;
+            catPos.y = next.y;
+        } else {
+            gameOver = true;
+            isVictory = true;<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>围住那只猫 - 最终优化版</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
@@ -293,264 +536,7 @@ function findShortestPath(startX, startY) {
 resetGame();
 </script>
 </body>
-</html><!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>围住那只猫 - 最终优化版</title>
-    <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body {
-            background-color: #f0f2f5;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            overflow: hidden;
-        }
-        .ui { text-align: center; z-index: 10; margin-bottom: 10px; }
-        h1 { margin: 5px 0; color: #333; font-size: 1.5rem; }
-        .score { font-size: 1.1rem; color: #ff5722; font-weight: bold; }
-        
-        #game-wrapper {
-            position: relative;
-            width: 98vw;
-            max-width: 500px;
-            aspect-ratio: 1 / 1.05;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 5px;
-        }
-        canvas {
-            width: 100%;
-            height: 100%;
-            touch-action: none;
-        }
-        .btn-reset {
-            margin-top: 15px;
-            padding: 12px 35px;
-            background: #4caf50;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            font-size: 1rem;
-            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="ui">
-        <h1>围住那只猫</h1>
-        <div class="score">步数: <span id="stepCount">0</span></div>
-    </div>
-
-    <div id="game-wrapper">
-        <canvas id="gameCanvas" width="850" height="850"></canvas>
-    </div>
-
-    <button class="btn-reset" onclick="resetGame()">重新开始</button>
-
-<script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const stepLabel = document.getElementById('stepCount');
-
-const ROWS = 9;
-const COLS = 9;
-const CELL_SIZE = 40; 
-const GAP = 8;
-const PADDING_X = 50; // 增加左右间距防止截断
-const PADDING_Y = 60;
-
-let grid = [];
-let catPos = { x: 4, y: 4 };
-let steps = 0;
-let gameOver = false;
-let winAnimFrame = 0;
-let isVictory = false;
-
-function resetGame() {
-    grid = [];
-    steps = 0;
-    gameOver = false;
-    isVictory = false;
-    winAnimFrame = 0;
-    catPos = { x: 4, y: 4 };
-    stepLabel.innerText = steps;
-
-    for (let i = 0; i < ROWS; i++) {
-        grid[i] = [];
-        for (let j = 0; j < COLS; j++) {
-            let isObstacle = Math.random() < 0.12 && !(i === 4 && j === 4);
-            grid[i][j] = isObstacle ? 1 : 0;
-        }
-    }
-    render();
-}
-
-function handleInput(e) {
-    if (gameOver) return;
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const canvasX = (clientX - rect.left) * scaleX;
-    const canvasY = (clientY - rect.top) * scaleY;
-
-    for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLS; c++) {
-            const { x, y } = getCoord(c, r);
-            const dist = Math.sqrt((canvasX - x)**2 + (canvasY - y)**2);
-            if (dist < CELL_SIZE) {
-                if (grid[r][c] === 0 && !(r === catPos.y && c === catPos.x)) {
-                    grid[r][c] = 1;
-                    steps++;
-                    stepLabel.innerText = steps;
-                    moveCat();
-                    render();
-                }
-                return;
-            }
-        }
-    }
-}
-
-canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(e); }, {passive: false});
-canvas.addEventListener('mousedown', handleInput);
-
-function getCoord(c, r) {
-    const x = PADDING_X + c * (CELL_SIZE * 2 + GAP) + (r % 2 === 1 ? CELL_SIZE : 0);
-    const y = PADDING_Y + r * (CELL_SIZE * 1.8);
-    return { x, y };
-}
-
-function drawCat(x, y, alpha, isClown) {
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    if (!isClown) {
-        ctx.fillStyle = '#333';
-        ctx.beginPath(); ctx.arc(x, y, CELL_SIZE * 0.7, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(x-15, y-5); ctx.lineTo(x-18, y-30); ctx.lineTo(x-2, y-10);
-        ctx.moveTo(x+15, y-5); ctx.lineTo(x+18, y-30); ctx.lineTo(x+2, y-10);
-        ctx.fill();
-        ctx.fillStyle = 'white';
-        ctx.beginPath(); ctx.arc(x-8, y-5, 5, 0, Math.PI * 2); ctx.arc(x+8, y-5, 5, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = 'black';
-        ctx.beginPath(); ctx.arc(x-8, y-5, 2, 0, Math.PI * 2); ctx.arc(x+8, y-5, 2, 0, Math.PI * 2); ctx.fill();
-    } else {
-        // 精细化小丑图案
-        // 1. 红色爆炸头发
-        ctx.fillStyle = '#f44336';
-        ctx.beginPath(); ctx.arc(x-22, y-10, 15, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(x+22, y-10, 15, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(x-25, y+5, 12, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(x+25, y+5, 12, 0, Math.PI*2); ctx.fill();
-        
-        // 2. 脸部
-        ctx.fillStyle = '#fff';
-        ctx.beginPath(); ctx.arc(x, y, CELL_SIZE * 0.75, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#333'; ctx.lineWidth = 2; ctx.stroke();
-        
-        // 3. 紫色花纹眼圈
-        ctx.fillStyle = '#9c27b0';
-        ctx.beginPath(); ctx.arc(x-12, y-8, 8, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(x+12, y-8, 8, 0, Math.PI*2); ctx.fill();
-
-        // 4. 眼睛
-        ctx.fillStyle = 'black';
-        ctx.beginPath(); ctx.arc(x-12, y-8, 3, 0, Math.PI * 2); ctx.arc(x+12, y-8, 3, 0, Math.PI * 2); ctx.fill();
-        
-        // 5. 大红鼻子
-        ctx.fillStyle = '#ff1744';
-        ctx.beginPath(); ctx.arc(x, y + 5, 10, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = 'white'; // 鼻子高光
-        ctx.beginPath(); ctx.arc(x-3, y+2, 3, 0, Math.PI*2); ctx.fill();
-
-        // 6. 夸张笑脸
-        ctx.strokeStyle = '#f44336'; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(x, y+8, 18, 0.1*Math.PI, 0.9*Math.PI); ctx.stroke();
-    }
-    ctx.restore();
-}
-
-function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLS; c++) {
-            const { x, y } = getCoord(c, r);
-            ctx.beginPath();
-            ctx.arc(x, y, CELL_SIZE, 0, Math.PI * 2);
-            ctx.fillStyle = grid[r][c] === 1 ? '#ffaa44' : '#bacda3';
-            ctx.fill();
-        }
-    }
-
-    const { x, y } = getCoord(catPos.x, catPos.y);
-    if (isVictory) {
-        winAnimFrame = Math.min(1, winAnimFrame + 0.015);
-        drawCat(x, y, 1 - winAnimFrame, false);
-        drawCat(x, y, winAnimFrame, true);
-        drawVictoryText(catPos.x, catPos.y);
-        if (winAnimFrame < 1) requestAnimationFrame(render);
-    } else {
-        drawCat(x, y, 1, false);
-    }
-}
-
-function drawVictoryText(cx, cy) {
-    const neighbors = getNeighbors(cx, cy);
-    const texts = ["开", "开", "学", "学", "喽", "喽"];
-    neighbors.sort((a, b) => a.y - b.y || a.x - b.x);
-
-    ctx.save();
-    // 调整字号：CELL_SIZE为40，直径80，设置字号为60左右正好占满
-    const fontSize = Math.floor(CELL_SIZE * 1.5 * winAnimFrame);
-    ctx.font = `bold ${fontSize}px "Microsoft YaHei"`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle"; // 确保在格子正中心
-    ctx.fillStyle = `rgba(255, 255, 255, ${winAnimFrame})`; // 白色字体在橙色背景上更清晰
-    
-    neighbors.forEach((n, i) => {
-        if (texts[i]) {
-            const { x, y } = getCoord(n.x, n.y);
-            // 绘制文字
-            ctx.fillText(texts[i], x, y);
-        }
-    });
-    ctx.restore();
-}
-
-function moveCat() {
-    const path = findShortestPath(catPos.x, catPos.y);
-    if (path) {
-        catPos.x = path[1].x;
-        catPos.y = path[1].y;
-        if (catPos.x === 0 || catPos.x === COLS-1 || catPos.y === 0 || catPos.y === ROWS-1) {
-            gameOver = true;
-            setTimeout(() => alert("猫跑了！"), 100);
-        }
-    } else {
-        const neighbors = getNeighbors(catPos.x, catPos.y).filter(n => grid[n.y][n.x] === 0);
-        if (neighbors.length > 0) {
-            const next = neighbors[Math.floor(Math.random() * neighbors.length)];
-            catPos.x = next.x;
-            catPos.y = next.y;
-        } else {
-            gameOver = true;
-            isVictory = true;
+</html>
             render();
         }
     }
