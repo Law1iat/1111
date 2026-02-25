@@ -2,9 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>星律·记忆回廊</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>围住神经猫</title>
     <style>
         * {
             margin: 0;
@@ -13,178 +12,109 @@
         }
 
         body {
-            font-family: 'Noto Sans SC', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            position: relative;
+            touch-action: none;
         }
 
-        /* 背景粒子容器 */
-        #particles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 0;
+        /* 标题区域 */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .title {
+            font-size: 2rem;
+            color: #333;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: #666;
         }
 
         /* 游戏容器 */
         .game-container {
             position: relative;
-            z-index: 10;
-            text-align: center;
-            padding: 20px;
+            background: #f5deb3;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 4px solid #8b4513;
         }
 
-        /* 标题样式 */
-        .title {
-            color: #e94560;
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 0 0 20px rgba(233, 69, 96, 0.6);
-            animation: glow 2s ease-in-out infinite alternate;
-        }
-
-        @keyframes glow {
-            from { text-shadow: 0 0 20px rgba(233, 69, 96, 0.6); }
-            to { text-shadow: 0 0 40px rgba(233, 69, 96, 0.9); }
+        /* 画布 */
+        #gameCanvas {
+            display: block;
+            border-radius: 5px;
+            cursor: pointer;
         }
 
         /* 信息栏 */
         .info-bar {
             display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-bottom: 30px;
-            color: #fff;
-            font-size: 1.2rem;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 8px;
         }
 
         .info-item {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px 25px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(5px);
+            text-align: center;
         }
 
         .info-label {
-            color: #e94560;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .info-value {
+            font-size: 1.5rem;
             font-weight: bold;
+            color: #333;
         }
 
-        /* 卡片网格 */
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            max-width: 600px;
-            margin: 0 auto;
-            perspective: 1000px;
-        }
-
-        /* 卡片容器 */
-        .card {
-            width: 100px;
-            height: 100px;
-            position: relative;
-            cursor: pointer;
-            transform-style: preserve-3d;
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .card.flipped {
-            transform: rotateY(180deg);
-        }
-
-        .card.matched {
-            animation: matchPulse 0.5s ease-out;
-        }
-
-        @keyframes matchPulse {
-            0% { transform: rotateY(180deg) scale(1); }
-            50% { transform: rotateY(180deg) scale(1.1); }
-            100% { transform: rotateY(180deg) scale(1); }
-        }
-
-        /* 卡片正反面 */
-        .card-face {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        /* 卡片背面（未翻开） */
-        .card-back {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .card-back::after {
-            content: '★';
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 2rem;
-        }
-
-        /* 卡片正面（翻开后） */
-        .card-front {
-            background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
-            transform: rotateY(180deg);
-            border: 2px solid #e94560;
-        }
-
-        /* 卡片悬停效果 */
-        .card:hover:not(.flipped):not(.matched) {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(233, 69, 96, 0.4);
-        }
-
-        /* 按钮样式 */
+        /* 按钮 */
         .btn {
-            margin-top: 30px;
-            padding: 15px 50px;
-            font-size: 1.2rem;
-            background: linear-gradient(45deg, #e94560, #ff6b8a);
+            margin-top: 20px;
+            padding: 12px 40px;
+            font-size: 1.1rem;
+            background: linear-gradient(180deg, #ff6b6b 0%, #ee5a5a 100%);
             color: white;
             border: none;
-            border-radius: 30px;
+            border-radius: 25px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 20px rgba(233, 69, 96, 0.4);
-            font-family: 'Noto Sans SC', sans-serif;
+            box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+            font-family: inherit;
         }
 
         .btn:hover {
             transform: scale(1.05);
-            box-shadow: 0 6px 30px rgba(233, 69, 96, 0.6);
+            box-shadow: 0 6px 20px rgba(255,107,107,0.6);
         }
 
         .btn:active {
             transform: scale(0.98);
         }
 
-        /* 胜利弹窗 */
+        /* 弹窗 */
         .modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0,0,0,0.7);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -200,423 +130,488 @@
         }
 
         .modal-content {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: linear-gradient(180deg, #fff 0%, #f0f0f0 100%);
             padding: 40px;
             border-radius: 20px;
             text-align: center;
-            border: 2px solid #e94560;
-            box-shadow: 0 0 50px rgba(233, 69, 96, 0.5);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
             transform: scale(0.8);
             transition: transform 0.3s ease;
+            max-width: 90%;
         }
 
         .modal.show .modal-content {
             transform: scale(1);
         }
 
-        .modal h2 {
-            color: #e94560;
-            font-size: 2rem;
+        .modal-icon {
+            font-size: 4rem;
             margin-bottom: 20px;
         }
 
-        .modal p {
-            color: #fff;
-            font-size: 1.2rem;
-            margin-bottom: 10px;
+        .modal-title {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 15px;
         }
 
-        /* 连击特效 */
-        .combo-text {
-            position: fixed;
-            font-size: 3rem;
-            font-weight: bold;
-            color: #e94560;
-            text-shadow: 0 0 20px rgba(233, 69, 96, 0.8);
-            pointer-events: none;
-            animation: comboFloat 1s ease-out forwards;
-            z-index: 50;
+        .modal-text {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 25px;
         }
 
-        @keyframes comboFloat {
-            0% { opacity: 1; transform: scale(0.5) translateY(0); }
-            50% { opacity: 1; transform: scale(1.2) translateY(-20px); }
-            100% { opacity: 0; transform: scale(1) translateY(-50px); }
+        /* 猫的表情 */
+        .cat-mood {
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 1rem;
+            color: #333;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .cat-mood.show {
+            opacity: 1;
         }
 
         /* 响应式 */
-        @media (max-width: 600px) {
-            .card-grid {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 10px;
-            }
-            .card {
-                width: 70px;
-                height: 70px;
-                font-size: 1.8rem;
-            }
-            .title {
-                font-size: 1.8rem;
-            }
-            .info-bar {
-                gap: 20px;
-                font-size: 1rem;
-            }
+        @media (max-width: 500px) {
+            .title { font-size: 1.5rem; }
+            .game-container { padding: 10px; }
+            .info-value { font-size: 1.2rem; }
         }
     </style>
 </head>
 <body>
-    <!-- 背景粒子 -->
-    <canvas id="particles"></canvas>
+    <div class="header">
+        <h1 class="title">🐱 围住神经猫 🐱</h1>
+        <p class="subtitle">点击格子放置障碍，别让猫跑掉！</p>
+    </div>
 
-    <!-- 游戏主界面 -->
     <div class="game-container">
-        <h1 class="title">✨ 星律·记忆回廊 ✨</h1>
-        
+        <div class="cat-mood" id="catMood">哼！我逃得掉！</div>
+        <canvas id="gameCanvas"></canvas>
         <div class="info-bar">
             <div class="info-item">
-                <span class="info-label">步数:</span>
-                <span id="moves">0</span>
+                <div class="info-label">步数</div>
+                <div class="info-value" id="moves">0</div>
             </div>
             <div class="info-item">
-                <span class="info-label">时间:</span>
-                <span id="timer">00:00</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">连击:</span>
-                <span id="combo">0</span>
+                <div class="info-label">最佳记录</div>
+                <div class="info-value" id="bestScore">-</div>
             </div>
         </div>
-
-        <div class="card-grid" id="cardGrid"></div>
-
-        <button class="btn" id="restartBtn" onclick="initGame()">🔄 重新开始</button>
     </div>
+
+    <button class="btn" onclick="initGame()">🔄 重新开始</button>
 
     <!-- 胜利弹窗 -->
     <div class="modal" id="winModal">
         <div class="modal-content">
-            <h2>🎉 恭喜通关！🎉</h2>
-            <p>总步数：<span id="finalMoves">0</span></p>
-            <p>总时间：<span id="finalTime">00:00</span></p>
-            <p>最高连击：<span id="finalCombo">0</span></p>
-            <button class="btn" onclick="closeModal()">再玩一次</button>
+            <div class="modal-icon">🎉</div>
+            <h2 class="modal-title">恭喜！你困住猫了！</h2>
+            <p class="modal-text">用了 <span id="winMoves">0</span> 步</p>
+            <button class="btn" onclick="closeModal('win')">再玩一次</button>
+        </div>
+    </div>
+
+    <!-- 失败弹窗 -->
+    <div class="modal" id="loseModal">
+        <div class="modal-content">
+            <div class="modal-icon">😿</div>
+            <h2 class="modal-title">猫逃跑了！</h2>
+            <p class="modal-text">它成功逃脱了边界</p>
+            <button class="btn" onclick="closeModal('lose')">再试一次</button>
         </div>
     </div>
 
     <script>
         // ==================== 游戏配置 ====================
-        const CARD_SYMBOLS = ['🌸', '🌙', '⭐', '🎵', '💎', '🦋', '🍀', '🔮'];
-        const GRID_SIZE = 4; // 4x4 网格
-        const TOTAL_CARDS = GRID_SIZE * GRID_SIZE;
+        const GRID_SIZE = 11;  // 11x11 网格
+        const CELL_SIZE = 45;  // 格子大小
+        const CAT_COLOR = '#FFA500';  // 猫的颜色
+        const WALL_COLOR = '#8B4513';  // 障碍颜色
+        const EMPTY_COLOR = '#DEB887';  // 空格颜色
+        const HOVER_COLOR = '#D2B48C';  // 悬停颜色
 
         // ==================== 游戏状态 ====================
-        let cards = [];
-        let flippedCards = [];
-        let matchedPairs = 0;
+        let canvas, ctx;
+        let grid = [];  // 0=空，1=墙，2=猫
+        let catPos = { x: 5, y: 5 };
         let moves = 0;
-        let combo = 0;
-        let maxCombo = 0;
-        let timerInterval = null;
-        let seconds = 0;
-        let canFlip = true;
+        let bestScore = localStorage.getItem('catBestScore') || '-';
+        let gameRunning = false;
+        let catMoodTimer = null;
 
-        // ==================== 音效管理 ====================
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        
-        function playSound(type) {
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
+        // ==================== 初始化 ====================
+        window.onload = function() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
             
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
+            // 设置画布大小
+            canvas.width = GRID_SIZE * CELL_SIZE;
+            canvas.height = GRID_SIZE * CELL_SIZE;
             
-            if (type === 'flip') {
-                oscillator.frequency.value = 800;
-                oscillator.type = 'sine';
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.1);
-            } else if (type === 'match') {
-                oscillator.frequency.value = 1200;
-                oscillator.type = 'sine';
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.3);
-                
-                // 和弦效果
-                setTimeout(() => {
-                    const osc2 = audioContext.createOscillator();
-                    const gain2 = audioContext.createGain();
-                    osc2.connect(gain2);
-                    gain2.connect(audioContext.destination);
-                    osc2.frequency.value = 1500;
-                    osc2.type = 'sine';
-                    gain2.gain.setValueAtTime(0.2, audioContext.currentTime);
-                    gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-                    osc2.start(audioContext.currentTime);
-                    osc2.stop(audioContext.currentTime + 0.3);
-                }, 50);
-            } else if (type === 'error') {
-                oscillator.frequency.value = 300;
-                oscillator.type = 'sawtooth';
-                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.2);
-            } else if (type === 'win') {
-                // 胜利音效序列
-                [523, 659, 784, 1047].forEach((freq, i) => {
-                    setTimeout(() => {
-                        const osc = audioContext.createOscillator();
-                        const gain = audioContext.createGain();
-                        osc.connect(gain);
-                        gain.connect(audioContext.destination);
-                        osc.frequency.value = freq;
-                        osc.type = 'sine';
-                        gain.gain.setValueAtTime(0.3, audioContext.currentTime);
-                        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-                        osc.start(audioContext.currentTime);
-                        osc.stop(audioContext.currentTime + 0.4);
-                    }, i * 150);
-                });
-            }
-        }
-
-        // ==================== 粒子背景系统 ====================
-        const particleCanvas = document.getElementById('particles');
-        const particleCtx = particleCanvas.getContext('2d');
-        let particles = [];
-
-        function resizeParticleCanvas() {
-            particleCanvas.width = window.innerWidth;
-            particleCanvas.height = window.innerHeight;
-        }
-
-        class Particle {
-            constructor() {
-                this.reset();
-            }
-
-            reset() {
-                this.x = Math.random() * particleCanvas.width;
-                this.y = Math.random() * particleCanvas.height;
-                this.size = Math.random() * 3 + 1;
-                this.speedX = Math.random() * 1 - 0.5;
-                this.speedY = Math.random() * 1 - 0.5;
-                this.opacity = Math.random() * 0.5 + 0.2;
-                this.color = `rgba(${Math.random() * 100 + 155}, ${Math.random() * 100 + 155}, 255, ${this.opacity})`;
-            }
-
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-
-                if (this.x < 0 || this.x > particleCanvas.width || 
-                    this.y < 0 || this.y > particleCanvas.height) {
-                    this.reset();
-                }
-            }
-
-            draw() {
-                particleCtx.beginPath();
-                particleCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                particleCtx.fillStyle = this.color;
-                particleCtx.fill();
-            }
-        }
-
-        function initParticles() {
-            particles = [];
-            for (let i = 0; i < 100; i++) {
-                particles.push(new Particle());
-            }
-        }
-
-        function animateParticles() {
-            particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            requestAnimationFrame(animateParticles);
-        }
+            // 显示最佳记录
+            document.getElementById('bestScore').textContent = bestScore;
+            
+            // 绑定点击事件
+            canvas.addEventListener('click', handleCanvasClick);
+            canvas.addEventListener('mousemove', handleCanvasMove);
+            canvas.addEventListener('mouseleave', () => draw());
+            
+            // 初始化游戏
+            initGame();
+        };
 
         // ==================== 游戏逻辑 ====================
-        function shuffle(array) {
-            const newArray = [...array];
-            for (let i = newArray.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+        function initGame() {
+            // 重置网格
+            grid = [];
+            for (let y = 0; y < GRID_SIZE; y++) {
+                grid[y] = [];
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    grid[y][x] = 0;
+                }
             }
-            return newArray;
+            
+            // 随机放置一些初始障碍（边缘）
+            for (let i = 0; i < 8; i++) {
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * GRID_SIZE);
+                    y = Math.floor(Math.random() * GRID_SIZE);
+                } while (
+                    (x === 5 && y === 5) ||  // 不能是猫的位置
+                    grid[y][x] === 1 ||  // 不能重复
+                    (x > 2 && x < 8 && y > 2 && y < 8)  // 中心区域不放
+                );
+                grid[y][x] = 1;
+            }
+            
+            // 重置猫位置
+            catPos = { x: 5, y: 5 };
+            grid[5][5] = 2;
+            
+            // 重置状态
+            moves = 0;
+            gameRunning = true;
+            document.getElementById('moves').textContent = '0';
+            
+            // 隐藏弹窗
+            document.getElementById('winModal').classList.remove('show');
+            document.getElementById('loseModal').classList.remove('show');
+            
+            // 绘制
+            draw();
         }
 
-        function createCard(symbol, index) {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.dataset.symbol = symbol;
-            card.dataset.index = index;
-
-            card.innerHTML = `
-                <div class="card-face card-back"></div>
-                <div class="card-face card-front">${symbol}</div>
-            `;
-
-            card.addEventListener('click', () => flipCard(card));
-            return card;
+        // ==================== 绘制 ====================
+        function draw(hoverX = -1, hoverY = -1) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    const cellX = x * CELL_SIZE;
+                    const cellY = y * CELL_SIZE;
+                    
+                    // 绘制格子背景
+                    if (grid[y][x] === 1) {
+                        // 障碍
+                        drawCell(cellX, cellY, WALL_COLOR, true);
+                    } else if (grid[y][x] === 2) {
+                        // 猫
+                        drawCat(cellX, cellY);
+                    } else {
+                        // 空格
+                        if (x === hoverX && y === hoverY && gameRunning) {
+                            drawCell(cellX, cellY, HOVER_COLOR, false);
+                        } else {
+                            drawCell(cellX, cellY, EMPTY_COLOR, false);
+                        }
+                    }
+                }
+            }
         }
 
-        function flipCard(card) {
-            if (!canFlip || card.classList.contains('flipped') || card.classList.contains('matched')) {
+        function drawCell(x, y, color, isWall) {
+            const padding = 2;
+            ctx.fillStyle = color;
+            ctx.fillRect(x + padding, y + padding, CELL_SIZE - padding * 2, CELL_SIZE - padding * 2);
+            
+            // 边框
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + padding, y + padding, CELL_SIZE - padding * 2, CELL_SIZE - padding * 2);
+            
+            // 如果是墙，画个 X
+            if (isWall) {
+                ctx.strokeStyle = '#654321';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(x + 10, y + 10);
+                ctx.lineTo(x + CELL_SIZE - 10, y + CELL_SIZE - 10);
+                ctx.moveTo(x + CELL_SIZE - 10, y + 10);
+                ctx.lineTo(x + 10, y + CELL_SIZE - 10);
+                ctx.stroke();
+            }
+        }
+
+        function drawCat(x, y) {
+            const centerX = x + CELL_SIZE / 2;
+            const centerY = y + CELL_SIZE / 2;
+            const radius = CELL_SIZE / 2 - 5;
+            
+            // 猫身体（圆形）
+            ctx.fillStyle = CAT_COLOR;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#CC8400';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // 猫耳朵
+            ctx.fillStyle = CAT_COLOR;
+            ctx.beginPath();
+            ctx.moveTo(centerX - radius + 5, centerY - radius + 5);
+            ctx.lineTo(centerX - radius + 15, centerY - radius - 10);
+            ctx.lineTo(centerX - radius + 25, centerY - radius + 5);
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX + radius - 5, centerY - radius + 5);
+            ctx.lineTo(centerX + radius - 15, centerY - radius - 10);
+            ctx.lineTo(centerX + radius - 25, centerY - radius + 5);
+            ctx.fill();
+            ctx.stroke();
+            
+            // 猫眼睛
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(centerX - 8, centerY - 5, 6, 0, Math.PI * 2);
+            ctx.arc(centerX + 8, centerY - 5, 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(centerX - 8, centerY - 5, 3, 0, Math.PI * 2);
+            ctx.arc(centerX + 8, centerY - 5, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 猫鼻子
+            ctx.fillStyle = 'pink';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY + 5, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 猫胡须
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(centerX - 15, centerY + 5);
+            ctx.lineTo(centerX - 25, centerY + 2);
+            ctx.moveTo(centerX - 15, centerY + 8);
+            ctx.lineTo(centerX - 25, centerY + 8);
+            ctx.moveTo(centerX + 15, centerY + 5);
+            ctx.lineTo(centerX + 25, centerY + 2);
+            ctx.moveTo(centerX + 15, centerY + 8);
+            ctx.lineTo(centerX + 25, centerY + 8);
+            ctx.stroke();
+            
+            // 猫嘴巴（动态变化）
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY + 10, 5, 0.2 * Math.PI, 0.8 * Math.PI);
+            ctx.stroke();
+        }
+
+        // ==================== 交互 ====================
+        function handleCanvasClick(e) {
+            if (!gameRunning) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / CELL_SIZE);
+            const y = Math.floor((e.clientY - rect.top) / CELL_SIZE);
+            
+            // 检查点击有效性
+            if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return;
+            if (grid[y][x] !== 0) return;  // 只能点空格
+            
+            // 放置障碍
+            grid[y][x] = 1;
+            moves++;
+            document.getElementById('moves').textContent = moves;
+            
+            // 检查猫是否被围住
+            if (isCatTrapped()) {
+                gameWin();
                 return;
             }
-
-            playSound('flip');
-            card.classList.add('flipped');
-            flippedCards.push(card);
-
-            if (flippedCards.length === 2) {
-                moves++;
-                document.getElementById('moves').textContent = moves;
-                checkMatch();
-            }
+            
+            // 猫移动
+            moveCat();
+            
+            // 重新绘制
+            draw();
         }
 
-        function checkMatch() {
-            canFlip = false;
-            const [card1, card2] = flippedCards;
+        function handleCanvasMove(e) {
+            if (!gameRunning) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / CELL_SIZE);
+            const y = Math.floor((e.clientY - rect.top) / CELL_SIZE);
+            
+            draw(x, y);
+        }
 
-            if (card1.dataset.symbol === card2.dataset.symbol) {
-                // 匹配成功
-                setTimeout(() => {
-                    playSound('match');
-                    card1.classList.add('matched');
-                    card2.classList.add('matched');
-                    matchedPairs++;
-                    combo++;
-                    if (combo > maxCombo) maxCombo = combo;
-                    document.getElementById('combo').textContent = combo;
+        // ==================== 猫 AI ====================
+        function moveCat() {
+            // 使用 BFS 寻找最短路径到边界
+            const path = findPathToEdge(catPos.x, catPos.y);
+            
+            if (path && path.length > 0) {
+                // 有路径可逃，移动到下一步
+                const nextPos = path[0];
+                grid[catPos.y][catPos.x] = 0;  // 清空原位置
+                catPos = nextPos;
+                grid[catPos.y][catPos.x] = 2;  // 设置新位置
+                
+                // 检查是否逃脱
+                if (isOnEdge(catPos.x, catPos.y)) {
+                    gameLose();
+                }
+                
+                // 显示猫的心情
+                showCatMood(getRandomMood());
+            }
+            // 如果没有路径，猫被困住，不移动
+        }
+
+        function findPathToEdge(startX, startY) {
+            const queue = [{ x: startX, y: startY, path: [] }];
+            const visited = new Set();
+            visited.add(`${startX},${startY}`);
+            
+            const directions = [
+                { dx: 0, dy: -1 },  // 上
+                { dx: 0, dy: 1 },   // 下
+                { dx: -1, dy: 0 },  // 左
+                { dx: 1, dy: 0 },   // 右
+                { dx: -1, dy: -1 }, // 左上
+                { dx: 1, dy: -1 },  // 右上
+                { dx: -1, dy: 1 },  // 左下
+                { dx: 1, dy: 1 }    // 右下
+            ];
+            
+            while (queue.length > 0) {
+                const current = queue.shift();
+                
+                // 检查是否到达边界
+                if (isOnEdge(current.x, current.y) && (current.x !== startX || current.y !== startY)) {
+                    return current.path;
+                }
+                
+                // 探索相邻格子
+                for (const dir of directions) {
+                    const nx = current.x + dir.dx;
+                    const ny = current.y + dir.dy;
                     
-                    // 显示连击特效
-                    if (combo >= 3) {
-                        showComboText(combo);
+                    if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE) {
+                        if (grid[ny][nx] === 0 && !visited.has(`${nx},${ny}`)) {
+                            visited.add(`${nx},${ny}`);
+                            queue.push({
+                                x: nx,
+                                y: ny,
+                                path: [...current.path, { x: nx, y: ny }]
+                            });
+                        }
                     }
-
-                    flippedCards = [];
-                    canFlip = true;
-
-                    if (matchedPairs === TOTAL_CARDS / 2) {
-                        gameWin();
-                    }
-                }, 500);
-            } else {
-                // 匹配失败
-                setTimeout(() => {
-                    playSound('error');
-                    card1.classList.remove('flipped');
-                    card2.classList.remove('flipped');
-                    combo = 0;
-                    document.getElementById('combo').textContent = combo;
-                    flippedCards = [];
-                    canFlip = true;
-                }, 1000);
+                }
             }
+            
+            return null;  // 没有路径
         }
 
-        function showComboText(comboCount) {
-            const comboText = document.createElement('div');
-            comboText.className = 'combo-text';
-            comboText.textContent = `${comboCount} COMBO!`;
-            comboText.style.left = '50%';
-            comboText.style.top = '40%';
-            comboText.style.transform = 'translate(-50%, -50%)';
-            document.body.appendChild(comboText);
-
-            setTimeout(() => comboText.remove(), 1000);
+        function isOnEdge(x, y) {
+            return x === 0 || x === GRID_SIZE - 1 || y === 0 || y === GRID_SIZE - 1;
         }
 
-        function startTimer() {
-            seconds = 0;
-            timerInterval = setInterval(() => {
-                seconds++;
-                const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-                const secs = (seconds % 60).toString().padStart(2, '0');
-                document.getElementById('timer').textContent = `${mins}:${secs}`;
-            }, 1000);
+        function isCatTrapped() {
+            const path = findPathToEdge(catPos.x, catPos.y);
+            return path === null;
         }
 
-        function stopTimer() {
-            clearInterval(timerInterval);
-        }
-
+        // ==================== 游戏结束 ====================
         function gameWin() {
-            stopTimer();
-            playSound('win');
+            gameRunning = false;
             
-            document.getElementById('finalMoves').textContent = moves;
-            document.getElementById('finalTime').textContent = document.getElementById('timer').textContent;
-            document.getElementById('finalCombo').textContent = maxCombo;
+            // 更新最佳记录
+            if (bestScore === '-' || moves < parseInt(bestScore)) {
+                bestScore = moves;
+                localStorage.setItem('catBestScore', bestScore);
+                document.getElementById('bestScore').textContent = bestScore;
+            }
             
-            setTimeout(() => {
-                document.getElementById('winModal').classList.add('show');
-            }, 500);
+            document.getElementById('winMoves').textContent = moves;
+            document.getElementById('winModal').classList.add('show');
         }
 
-        function initGame() {
-            // 重置状态
-            matchedPairs = 0;
-            moves = 0;
-            combo = 0;
-            maxCombo = 0;
-            flippedCards = [];
-            canFlip = true;
-            seconds = 0;
-
-            // 重置 UI
-            document.getElementById('moves').textContent = '0';
-            document.getElementById('combo').textContent = '0';
-            document.getElementById('timer').textContent = '00:00';
-            document.getElementById('winModal').classList.remove('show');
-
-            // 停止旧计时器
-            stopTimer();
-
-            // 创建卡片
-            const cardGrid = document.getElementById('cardGrid');
-            cardGrid.innerHTML = '';
-            
-            const cardSymbols = shuffle([...CARD_SYMBOLS, ...CARD_SYMBOLS]);
-            
-            cardSymbols.forEach((symbol, index) => {
-                const card = createCard(symbol, index);
-                cardGrid.appendChild(card);
-            });
-
-            // 开始计时
-            startTimer();
+        function gameLose() {
+            gameRunning = false;
+            document.getElementById('loseModal').classList.add('show');
         }
 
-        function closeModal() {
-            document.getElementById('winModal').classList.remove('show');
+        function closeModal(type) {
+            document.getElementById(type + 'Modal').classList.remove('show');
             initGame();
         }
 
-        // ==================== 初始化 ====================
-        window.addEventListener('resize', resizeParticleCanvas);
-        resizeParticleCanvas();
-        initParticles();
-        animateParticles();
-        initGame();
+        // ==================== 猫的心情 ====================
+        function showCatMood(text) {
+            const moodEl = document.getElementById('catMood');
+            moodEl.textContent = text;
+            moodEl.classList.add('show');
+            
+            clearTimeout(catMoodTimer);
+            catMoodTimer = setTimeout(() => {
+                moodEl.classList.remove('show');
+            }, 1500);
+        }
 
-        // 首次点击激活音频上下文（浏览器策略）
-        document.body.addEventListener('click', () => {
-            if (audioContext.state === 'suspended') {
-                audioContext.resume();
+        function getRandomMood() {
+            const moods = [
+                '哼！我逃得掉！',
+                '太天真了！',
+                '就这？',
+                '抓不到我~',
+                '嘿嘿嘿！',
+                '再来一次！',
+                '我闪！',
+                '你不行啊！'
+            ];
+            return moods[Math.floor(Math.random() * moods.length)];
+        }
+
+        // ==================== 本地存储 ====================
+        // 页面加载时读取最佳记录
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('catBestScore');
+            if (saved) {
+                bestScore = saved;
+                document.getElementById('bestScore').textContent = bestScore;
             }
-        }, { once: true });
+        });
     </script>
 </body>
 </html>
